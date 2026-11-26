@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>밤골목 패스 — 프로토타입</title>
+<style>
+  :root{--bg:#0d1020;--card:#1a1e33;--card2:#232842;--txt:#f2f3fa;--sub:#a7abc4;--acc:#ffb43a;--acc2:#5eead4;--warn:#fb7185;--ok:#4ade80}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:"Noto Sans KR",system-ui,sans-serif;max-width:480px;margin:0 auto;padding:16px 14px 40px}
+  .badge{display:inline-block;background:var(--warn);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px}
+  .badge.gray{background:#3a4066;color:var(--sub)}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  h1{font-size:24px;margin:8px 0 2px}
+  .tagline{color:var(--sub);font-size:13px;margin-bottom:14px}
+  .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:14px}
+  .card h2{font-size:15px;margin-bottom:10px}
+  .count{font-size:40px;font-weight:800;letter-spacing:1px;color:var(--acc)}
+  .status{font-weight:700;padding:8px 12px;border-radius:10px;background:var(--card2);font-size:14px}
+  .status.pre{border:1px solid var(--acc);color:var(--acc)}
+  .status.alert{background:#3d2b12;border:1px solid var(--acc);color:var(--acc)}
+  .status.after{border:1px solid var(--acc2);color:var(--acc2)}
+  .simrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .simrow button,.chip{cursor:pointer}
+  button{background:var(--card2);color:var(--txt);border:1px solid #39406b;border-radius:10px;padding:8px 12px;font-size:13px}
+  button.on{background:var(--acc);color:#191203;border-color:var(--acc);font-weight:700}
+  .controls{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .chip{border-radius:999px;padding:6px 12px;font-size:12px}
+  .chip.on{background:var(--acc2);color:#06231e;border-color:var(--acc2);font-weight:700}
+  .store{border-top:1px solid #2c3157;padding:12px 2px}
+  .store:first-of-type{border-top:none}
+  .store .nm{font-size:16px;font-weight:700}
+  .store .meta{color:var(--sub);font-size:12px;margin:4px 0}
+  .pill{display:inline-block;font-size:11px;border-radius:6px;padding:2px 7px;background:var(--card2);margin-right:4px}
+  .pill.hot{color:var(--warn)} .pill.mid{color:var(--acc)} .pill.calm{color:var(--ok)}
+  .remain{color:var(--acc);font-weight:700}
+  .stampin{display:flex;gap:6px}
+  input{background:#12152a;border:1px solid #39406b;color:var(--txt);border-radius:10px;padding:9px 10px;font-size:14px;flex:1;min-width:0}
+  .voucher{background:linear-gradient(135deg,#3d2b12,#57400f);border:1px dashed var(--acc);border-radius:12px;padding:14px;text-align:center;margin-top:10px}
+  .voucher .code{font-size:20px;font-weight:800;letter-spacing:2px;color:var(--acc)}
+  .hidden{display:none}
+  .small{font-size:11px;color:var(--sub);line-height:1.6}
+  footer .small{margin-top:6px}
+  .stamps{font-size:22px;letter-spacing:4px}
+</style>
+</head>
+<body>
+<header>
+  <span class="badge">프로토타입 · 시연용</span>
+  <span class="badge gray">Dopamine Seoul 24 · 주제 01 골목 연결</span>
+</header>
+<h1>🌙 밤골목 패스</h1>
+<p class="tagline">행사 끝난 밤 10시, 인파를 반경 1km 골목 식당으로 이끄는 라스트오더 알림</p>
+
+<section class="card" id="eventCard">
+  <h2>🎆 서울라이트 DDP — 행사 종료 카운트다운</h2>
+  <div class="count" id="countdown">--:--:--</div>
+  <p class="small">종료 시각 <b>21:30</b> · 운영 18:00~21:30 · 2025 겨울 회차(12/18~31) 기준
+  (서울시 공식 보도자료·서울디자인재단 주관, 2026-11-26 확인). 오늘 날짜에 같은 종료 시각을 적용한 시연입니다.</p>
+  <div class="status" id="alertStatus" style="margin-top:10px">상태 확인 중…</div>
+  <div class="simrow">
+    <span class="small" style="align-self:center">시연용 시각 이동:</span>
+    <button data-sim="20:30">20:30 (평상시)</button>
+    <button data-sim="21:05">21:05 (종료 30분 전)</button>
+    <button data-sim="21:35">21:35 (종료 후)</button>
+    <button data-sim="now" class="on">실제 시각</button>
+  </div>
+</section>
+
+<section class="card">
+  <h2>🍢 DDP 반경 1km 골목 점포 <span class="small">(표본 4곳 — 점포명·라스트오더는 실존 확인, 여유 좌석·혼잡도는 예시)</span></h2>
+  <div class="controls">
+    <button class="chip on" data-filter="all">전체</button>
+    <button class="chip" data-filter="여유">혼잡도 여유만</button>
+    <button class="chip" data-filter="보통">보통 이하</button>
+    <button class="chip" data-sort="remain">라스트오더 임박순</button>
+    <button class="chip" data-sort="distance">가까운순</button>
+  </div>
+  <div id="storeList"></div>
+  <p class="small" id="cityDataNote"></p>
+</section>
+
+<section class="card">
+  <h2>🎫 QR 스탬프 → 야간 바우처 <span class="small">(시연용 — 카메라 없이 코드 입력)</span></h2>
+  <p class="stamps" id="stampView">☆☆☆</p>
+  <p class="small">점포 카드의 스탬프 코드를 입력하거나 '방문 인증 시뮬레이션' 버튼을 누르세요.
+  스탬프 1개가 모이면 야간 바우처가 발급됩니다. 실제 서비스에서는 점주 확인 없이는 발급되지 않습니다.</p>
+  <div class="stampin" style="margin-top:10px">
+    <input id="stampCode" placeholder="스탬프 코드 입력 (예: BAM-NAKJI)">
+    <button id="stampBtn">적립</button>
+  </div>
+  <div id="voucherBox" class="voucher hidden">
+    <div>🎉 야간 바우처 발급 완료 (시연용)</div>
+    <div class="code" id="voucherCode"></div>
+    <div class="small">다음 골목 점포 방문 시 사용 · 발급 시각 <span id="voucherTime"></span></div>
+  </div>
+</section>
+
+<footer>
+  <p class="small"><b>데이터 출처</b> · 서울시 실시간 도시데이터(OA-21285) 구조를 본뜬 로컬 JSON(data.json)으로 대체 —
+  혼잡도 4단계(여유·보통·약간 붐빔·붐빔)는 실제 데이터셋 정의와 동일. 상권분석서비스 추정매출의
+  21~24시 필드(TMZON_21_24_SELNG_AMT) 실재 확인. 점포 표본은 2026-11-26 현장 검증 기록에 근거합니다.
+  성과 수치·실사용자 데이터는 없습니다.</p>
+</footer>
+
+<script>
+"use strict";
+/* =====================================================================
+   [실제 API 연동 지점] 서울 열린데이터광장 실시간 도시데이터 (OA-21285)
+   - 실제 연동 시: 아래 loadCityData()가 data.json 대신
+     http://openapi.seoul.go.kr:8088/{인증키}/json/citydata/1/5/{장소명}
+     을 호출하고, 응답의 CITYDATA.AREA_CONGEST_LVL(혼잡도 4단계)을
+     점포·장소 카드에 반영합니다. 인증키는 서버 측 프록시에서 보관합니다.
+   - 현재 프로토타입은 같은 응답 구조를 본뜬 로컬 data.json을 사용합니다.
+   ===================================================================== */
+const EVENT_END = {h:21, m:30};            // 서울라이트 DDP 종료 21:30 (검증된 사실)
+const ALERT_BEFORE_MIN = 30;               // 종료 30분 전 알림 (서비스 핵심 규칙)
+let DATA = null;
+let simOffsetMin = null;                   // 시연용 시각 오프셋(분), null = 실제 시각
+let filterLvl = "all", sortMode = "remain";
+const stamps = new Set();
+
+function now(){
+  const d = new Date();
+  if(simOffsetMin !== null) d.setMinutes(d.getMinutes() + simOffsetMin);
+  return d;
+}
+function todayAt(h, m){ const d = now(); d.setHours(h, m, 0, 0); return d; }
+function fmtRemain(ms){
+  if(ms <= 0) return "마감";
+  const s = Math.floor(ms/1000), h = Math.floor(s/3600), m = Math.floor(s%3600/60), ss = s%60;
+  return [h,m,ss].map(v=>String(v).padStart(2,"0")).join(":");
+}
+function parseHM(str){ const [h,m] = str.split(":").map(Number); return {h, m: m + (h===24?0:0), hh:h}; }
+
+function tick(){
+  const end = todayAt(EVENT_END.h, EVENT_END.m);
+  const remain = end - now();
+  const el = document.getElementById("countdown");
+  const st = document.getElementById("alertStatus");
+  if(remain > ALERT_BEFORE_MIN*60000){
+    el.textContent = fmtRemain(remain);
+    st.className = "status pre";
+    st.textContent = "⏳ 평상시 — 종료 " + ALERT_BEFORE_MIN + "분 전부터 골목 추천 알림이 활성화됩니다.";
+  } else if(remain > 0){
+    el.textContent = fmtRemain(remain);
+    st.className = "status alert";
+    st.textContent = "🔔 알림 활성 — 종료 30분 전입니다. 아래 골목 점포 추천이 발송되는 시점입니다.";
+  } else {
+    el.textContent = "종료됨";
+    st.className = "status after";
+    st.textContent = "🌃 행사 종료 — 인파 분산 모드. 라스트오더가 남은 점포만 아래에 표시됩니다.";
+  }
+  renderStores();
+}
+
+function remainToLastOrder(store){
+  const [h, m] = store.last_order.split(":").map(Number);
+  const t = todayAt(h, m);
+  return t - now();
+}
+function lvlClass(l){ return l==="여유" ? "calm" : (l==="보통" ? "mid" : "hot"); }
+
+function renderStores(){
+  if(!DATA) return;
+  const list = document.getElementById("storeList");
+  let stores = DATA.stores.slice();
+  if(filterLvl !== "all"){
+    const order = {"여유":0, "보통":1, "약간 붐빔":2, "붐빔":3};
+    stores = stores.filter(s => order[s.congestion] <= order[filterLvl]);
+  }
+  if(sortMode === "remain") stores.sort((a,b)=>remainToLastOrder(a)-remainToLastOrder(b));
+  if(sortMode === "distance") stores.sort((a,b)=>a.distance_m-b.distance_m);
+  list.innerHTML = stores.map(s=>{
+    const r = remainToLastOrder(s);
+    const rTxt = r > 0 ? Math.floor(r/60000) + "분 남음" : "마감됨";
+    return `<div class="store">
+      <div class="nm">${s.name}</div>
+      <div class="meta">${s.category} · DDP에서 ${s.distance_m}m · ${s.verified}</div>
+      <div>
+        <span class="pill ${lvlClass(s.congestion)}">혼잡도 ${s.congestion} (예시)</span>
+        <span class="pill">여유 좌석 ${s.seats_left_example}석 (예시)</span>
+        <span class="pill">라스트오더 ${s.last_order}</span>
+        <span class="remain">${rTxt}</span>
+      </div>
+      <div style="margin-top:8px">
+        <button onclick="simulateVisit('${s.id}')">방문 인증 시뮬레이션</button>
+        <span class="small">스탬프 코드: ${s.stamp_code}</span>
+      </div>
+    </div>`;
+  }).join("") || "<p class='small'>조건에 맞는 점포가 없습니다.</p>";
+}
+
+function addStamp(storeId){
+  const s = DATA.stores.find(x=>x.id===storeId);
+  if(!s) { alert("알 수 없는 스탬프 코드입니다."); return; }
+  stamps.add(s.id);
+  document.getElementById("stampView").textContent =
+    "★".repeat(Math.min(stamps.size,3)) + "☆".repeat(Math.max(0,3-stamps.size));
+  if(stamps.size >= 1){
+    const code = "NIGHT-" + Math.random().toString(36).slice(2,8).toUpperCase();
+    document.getElementById("voucherCode").textContent = code;
+    document.getElementById("voucherTime").textContent = now().toLocaleTimeString("ko-KR");
+    document.getElementById("voucherBox").classList.remove("hidden");
+  }
+}
+function simulateVisit(id){ addStamp(id); }
+document.getElementById("stampBtn").addEventListener("click", ()=>{
+  const code = document.getElementById("stampCode").value.trim().toUpperCase();
+  const s = DATA.stores.find(x=>x.stamp_code===code);
+  if(s) addStamp(s.id); else alert("스탬프 코드를 확인하세요. (점포 카드에 표시돼 있습니다)");
+});
+document.querySelectorAll("[data-sim]").forEach(b=>b.addEventListener("click", ()=>{
+  document.querySelectorAll("[data-sim]").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");
+  if(b.dataset.sim === "now"){ simOffsetMin = null; }
+  else{
+    const [h,m] = b.dataset.sim.split(":").map(Number);
+    const target = new Date(); target.setHours(h, m, 0, 0);
+    simOffsetMin = Math.round((target - new Date())/60000);
+  }
+  tick();
+}));
+document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click", ()=>{
+  filterLvl = b.dataset.filter;
+  document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("on", x===b));
+  renderStores();
+}));
+document.querySelectorAll("[data-sort]").forEach(b=>b.addEventListener("click", ()=>{
+  sortMode = b.dataset.sort;
+  document.querySelectorAll("[data-sort]").forEach(x=>x.classList.toggle("on", x===b));
+  renderStores();
+}));
+
+/* [실제 API 연동 지점] 아래 fetch 대상을 OA-21285 실 API로 교체 */
+async function loadCityData(){
+  const res = await fetch("data.json");
+  DATA = await res.json();
+  const row = DATA.SeoulRtd.row[0];
+  document.getElementById("cityDataNote").textContent =
+    "실시간 도시데이터(로컬 대체): " + row.AREA_NM + " 혼잡도 '" + row.AREA_CONGEST_LVL + "' (예시 값) · 실제 연동 지점은 코드 주석 참조";
+  renderStores();
+}
+loadCityData();
+setInterval(tick, 1000);
+tick();
+</script>
+</body>
+</html>
